@@ -45,7 +45,7 @@ pub struct Route {
 
 #[derive(Debug, Deserialize)]
 pub struct NameServer {
-    pub search : Vec<String>,
+    pub search: Vec<String>,
     pub addresses: Vec<String>,
 }
 

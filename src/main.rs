@@ -36,8 +36,6 @@ fn main() -> Result<()> {
         users::apply(&cfg)?;
         // mounts::apply(&cfg)?;
         // extension::apply(&cfg)?;
-
-        
     } else {
         log::info!("Subsequent boot, skipping per-instance configuration");
     }
