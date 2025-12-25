@@ -1,9 +1,4 @@
-mod config;
-mod metadata;
-// mod network;
-mod users;
-// mod mounts;
-// mod extension;
+use hero_init::*;
 
 use anyhow::Result;
 use config::Configuration;

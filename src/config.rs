@@ -10,25 +10,25 @@ pub struct Configuration {
     pub extension: Extension,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct Metadata {
     pub instance_id: String,
     pub hostname: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct User {
     pub name: String,
     pub ssh_authorized_keys: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct Extension {
     pub entrypoint: String,
     pub environment: HashMap<String, String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct Mount {
     pub source: String,
     pub target: String,
@@ -36,20 +36,20 @@ pub struct Mount {
     pub r#type: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct Route {
     pub to: String,
     pub via: String,
     pub metric: Option<u32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct NameServer {
     pub search: Vec<String>,
     pub addresses: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Default)]
 pub struct Ethernet {
     pub name: String,
     pub mac: String,
