@@ -1,39 +1,16 @@
 use crate::config::Configuration;
-use anyhow::Result;
-use std::fs;
-use std::path::Path;
-use std::process::Command;
+use libc::{SYS_sethostname, syscall};
+use std::ffi::CString;
+use std::io;
 
-pub fn apply(cfg: &Configuration) -> Result<()> {
-    write_metadata_files(cfg, "/etc/hostname", "/var/lib/hero-init/instance-id")?;
-    apply_hostname(&cfg.metadata.hostname)?;
-    Ok(())
-}
+pub fn apply(cfg: &Configuration) -> io::Result<()> {
+    // Set hostname using libc syscall
+    let cstr = CString::new(cfg.metadata.hostname.as_str()).unwrap();
+    let res = unsafe { syscall(SYS_sethostname, cstr.as_ptr(), cfg.metadata.hostname.len()) };
 
-pub fn write_metadata_files(
-    cfg: &Configuration,
-    hostname_path: &str,
-    instance_id_path: &str,
-) -> Result<()> {
-    // Set hostname in /etc/hostname
-    if let Some(parent) = Path::new(hostname_path).parent() {
-        fs::create_dir_all(parent)?;
+    if res == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
     }
-    fs::write(hostname_path, &cfg.metadata.hostname)?;
-
-    // Write persistent instance-id
-    if let Some(parent) = Path::new(instance_id_path).parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::write(instance_id_path, &cfg.metadata.instance_id)?;
-    Ok(())
-}
-
-fn apply_hostname(hostname: &str) -> Result<()> {
-    // Apply hostname using hostnamectl
-    Command::new("hostnamectl")
-        .arg("set-hostname")
-        .arg(hostname)
-        .status()?;
-    Ok(())
 }
