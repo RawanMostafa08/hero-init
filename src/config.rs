@@ -1,13 +1,19 @@
-use serde::Deserialize;
-use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+
+use crate::network::NetworkConfigType;
 
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
     pub metadata: Metadata,
-    pub network: Vec<Ethernet>,
+    pub network: Network,
     pub users: Vec<User>,
     pub mounts: Vec<Mount>,
-    pub extension: Extension,
+}
+
+#[derive(Debug, Deserialize, Default)]
+pub struct Network {
+    pub interfaces: Vec<Ethernet>,
+    pub provider: NetworkConfigType,
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -25,12 +31,6 @@ pub struct User {
 }
 
 #[derive(Debug, Deserialize, Default)]
-pub struct Extension {
-    pub entrypoint: String,
-    pub environment: HashMap<String, String>,
-}
-
-#[derive(Debug, Deserialize, Default)]
 pub struct Mount {
     pub source: String,
     pub target: String,
@@ -38,20 +38,20 @@ pub struct Mount {
     pub r#type: Option<String>,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Route {
     pub to: String,
     pub via: String,
     pub metric: Option<u32>,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct NameServer {
     pub search: Vec<String>,
     pub addresses: Vec<String>,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Ethernet {
     pub name: String,
     pub mac: String,

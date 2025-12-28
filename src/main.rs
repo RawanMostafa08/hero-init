@@ -27,11 +27,9 @@ fn main() -> Result<()> {
     if is_first {
         log::info!("First boot detected, applying configuration");
         metadata::apply(&cfg.metadata)?;
-        // network::apply(&cfg)?;
-
+        network::apply(&cfg.network)?;
         users::apply(&cfg.users)?;
-        // mounts::apply(&cfg)?;
-        // extension::apply(&cfg)?;
+        // mounts::apply(&cfg.mounts)?;
     } else {
         log::info!("Subsequent boot, skipping per-instance configuration");
     }
