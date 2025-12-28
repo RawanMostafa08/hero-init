@@ -34,16 +34,16 @@ Functions that modify the core system state to match cloud-init style configurat
 ## User & Security Primitives
 Functions that handle user creation and SSH key injection.
 
-- [ ] **add_system_user(username: &str, shell: &str, groups: Vec<&str>)**  
+- [x] **add_system_user(username: &str, shell: &str, groups: Vec<&str>)**  
   Wraps `useradd -m -s {shell} -G {groups} {username}`.
 
-- [ ] **inject_ssh_keys(username: &str, keys: Vec<String>)**  
+- [x] **inject_ssh_keys(username: &str, keys: Vec<String>)**  
   Resolves user home directory via `/etc/passwd`, creates `.ssh/` folder, and writes keys to `authorized_keys`.
 
-- [ ] **set_permissions(path: &Path, mode: u32, uid: u32, gid: u32)**  
+- [x] **set_permissions(path: &Path, mode: u32, uid: u32, gid: u32)**  
   Calls `chmod` and `chown` to secure the `.ssh` folder.
 
-- [ ] **add_sudo_rule(username: &str)**  
+- [x] **add_sudo_rule(username: &str)**  
   Creates `/etc/sudoers.d/{username}` with `ALL=(ALL) NOPASSWD:ALL`.
 
 ## Logic & Execution Primitives
