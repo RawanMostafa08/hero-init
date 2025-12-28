@@ -26,9 +26,9 @@ fn main() -> Result<()> {
     let is_first = is_first_boot(&cfg)?;
     if is_first {
         log::info!("First boot detected, applying configuration");
-        metadata::apply(&cfg)?;
+        metadata::apply(&cfg.metadata)?;
         // network::apply(&cfg)?;
-        users::apply(&cfg)?;
+        users::apply(&cfg.users)?;
         // mounts::apply(&cfg)?;
         // extension::apply(&cfg)?;
     } else {

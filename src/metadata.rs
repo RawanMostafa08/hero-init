@@ -1,15 +1,15 @@
-use crate::config::Configuration;
+use crate::config::Metadata;
 use libc::{SYS_sethostname, syscall};
 use std::ffi::CString;
 use std::io;
 
-pub fn apply(cfg: &Configuration) -> io::Result<()> {
+pub fn apply(metadata: &Metadata) -> io::Result<()> {
     // Persist instance ID
-    write_instance_id(&cfg.metadata.instance_id, "/var/lib/hero-init/instance-id")?;
+    write_instance_id(&metadata.instance_id, "/var/lib/hero-init/instance-id")?;
 
     // Set hostname using libc syscall
-    let cstr = CString::new(cfg.metadata.hostname.as_str()).unwrap();
-    let res = unsafe { syscall(SYS_sethostname, cstr.as_ptr(), cfg.metadata.hostname.len()) };
+    let cstr = CString::new(metadata.hostname.as_str()).unwrap();
+    let res = unsafe { syscall(SYS_sethostname, cstr.as_ptr(), metadata.hostname.len()) };
 
     if res == 0 {
         Ok(())
