@@ -28,6 +28,7 @@ fn main() -> Result<()> {
         log::info!("First boot detected, applying configuration");
         metadata::apply(&cfg.metadata)?;
         // network::apply(&cfg)?;
+
         users::apply(&cfg.users)?;
         // mounts::apply(&cfg)?;
         // extension::apply(&cfg)?;
