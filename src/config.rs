@@ -20,6 +20,8 @@ pub struct Metadata {
 pub struct User {
     pub name: String,
     pub ssh_authorized_keys: Vec<String>,
+    #[serde(default)]
+    pub groups: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Default)]

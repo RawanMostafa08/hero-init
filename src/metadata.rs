@@ -61,7 +61,7 @@ fn set_hostname_syscall(hostname: &str) -> io::Result<()> {
 // Unit tests
 #[cfg(test)]
 mod tests {
-    use crate::metadata;
+    use super::*;
     use std::fs;
     use tempfile::TempDir;
 
@@ -70,7 +70,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let instance_id_path = temp_dir.path().join("instance-id");
         let instance_id = "test-instance-123";
-        metadata::write_instance_id(instance_id, instance_id_path.to_str().unwrap()).unwrap();
+        write_instance_id(instance_id, instance_id_path.to_str().unwrap()).unwrap();
 
         assert_eq!(fs::read_to_string(&instance_id_path).unwrap(), instance_id);
     }
@@ -80,7 +80,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let hostname_path = temp_dir.path().join("hostname");
         let hostname = "test-host";
-        metadata::write_hostname_file(hostname, hostname_path.to_str().unwrap()).unwrap();
+        write_hostname_file(hostname, hostname_path.to_str().unwrap()).unwrap();
         let content = fs::read_to_string(&hostname_path).unwrap();
         assert_eq!(content, hostname);
     }
@@ -90,7 +90,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let hostname = "test-host";
         let hosts_path = temp_dir.path().join("hosts");
-        metadata::update_hosts_file(hostname, hosts_path.to_str().unwrap()).unwrap();
+        update_hosts_file(hostname, hosts_path.to_str().unwrap()).unwrap();
         let content = fs::read_to_string(&hosts_path).unwrap();
         assert!(content.contains(&format!("127.0.1.1 {}", hostname)));
     }
