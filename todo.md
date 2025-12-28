@@ -19,10 +19,10 @@ Functions that interact with the kernel and `/dev` tree to find configuration so
 ## Identity & System Primitives
 Functions that modify the core system state to match cloud-init style configuration.
 
-- [ ] **set_hostname(name: &str) -> Result<()>**  
+- [x] **set_hostname(name: &str) -> Result<()>**  
   Overwrites `/etc/hostname` and calls the `sethostname` syscall.
 
-- [ ] **update_hosts_file(hostname: &str)**  
+- [x] **update_hosts_file(hostname: &str)**  
   Appends `127.0.1.1 <hostname>` to `/etc/hosts` to prevent resolution errors.
 
 - [ ] **write_network_config(config_yaml: &str, provider: &str)**  
