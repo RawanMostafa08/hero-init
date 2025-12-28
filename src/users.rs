@@ -51,21 +51,19 @@ pub fn apply(users: &[User]) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tempfile::TempDir;
     use crate::config::User;
     use std::fs;
+    use tempfile::TempDir;
 
     #[test]
     fn test_apply_users_in_tempdir() {
         let temp_dir = TempDir::new().unwrap();
         let ssh_dir = temp_dir.path().join("root/.ssh");
 
-        let users = vec![
-            User {
-                name: "root".to_string(),
-                ssh_authorized_keys: vec!["ssh-rsa AAA...".to_string()],
-            }
-        ];
+        let users = vec![User {
+            name: "root".to_string(),
+            ssh_authorized_keys: vec!["ssh-rsa AAA...".to_string()],
+        }];
 
         for user in &users {
             // Write SSH keys to tempdir instead of /home

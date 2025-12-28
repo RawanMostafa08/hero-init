@@ -18,7 +18,7 @@ pub fn apply(metadata: &Metadata) -> io::Result<()> {
     }
 }
 
-pub fn write_instance_id(instance_id: &str, instance_id_path: &str) -> io::Result<()> {
+fn write_instance_id(instance_id: &str, instance_id_path: &str) -> io::Result<()> {
     use std::fs;
     use std::path::Path;
 
@@ -28,4 +28,41 @@ pub fn write_instance_id(instance_id: &str, instance_id_path: &str) -> io::Resul
     }
     fs::write(instance_id_path, instance_id)?;
     Ok(())
+}
+
+// Unit tests
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use crate::config;
+    use crate::metadata;
+    use tempfile::TempDir;
+    #[test]
+    fn test_apply_metadata() {
+        let temp_dir = TempDir::new().unwrap();
+
+        let cfg = config::Configuration {
+            metadata: crate::config::Metadata {
+                hostname: "test-host".to_string(),
+                instance_id: "instance-123".to_string(),
+            },
+            network: vec![config::Ethernet::default()],
+            users: vec![config::User::default()],
+            mounts: vec![config::Mount::default()],
+            extension: config::Extension::default(),
+        };
+        let instance_id_path = temp_dir.path().join("instance-id");
+
+        metadata::write_instance_id(
+            &cfg.metadata.instance_id,
+            instance_id_path.to_str().unwrap(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            fs::read_to_string(&instance_id_path).unwrap(),
+            cfg.metadata.instance_id
+        );
+    }
 }
