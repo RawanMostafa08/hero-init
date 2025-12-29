@@ -40,10 +40,7 @@ pub fn apply_network_config(provider: NetworkConfigType) -> io::Result<()> {
     if status.success() {
         Ok(())
     } else {
-        Err(io::Error::new(
-            io::ErrorKind::Other,
-            "failed to apply network configuration",
-        ))
+        Err(io::Error::other("failed to apply network configuration"))
     }
 }
 
