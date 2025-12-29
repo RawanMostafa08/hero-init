@@ -44,3 +44,35 @@ pub fn write_file_atomic(path: &Path, content: &str, mode: u32) -> Result<()> {
 
     Ok(())
 }
+
+// Add an entry to /etc/fstab and mount it
+pub fn mount_fstab_entry(
+    label: &str,
+    device: &Path,
+    mount_point: &Path,
+    fs_type: &str,
+) -> Result<()> {
+    let entry = format!(
+        "LABEL={} {} {} {} defaults 0 0\n",
+        label,
+        device.display(),
+        mount_point.display(),
+        fs_type
+    );
+
+    {
+        let mut fstab = OpenOptions::new().append(true).open("/etc/fstab")?;
+
+        fstab.write_all(entry.as_bytes())?;
+    }
+
+    let status = Command::new("mount").arg("-a").status()?;
+
+    if !status.success() {
+        return Err(io::Error::other(
+            "mount -a failed after updating /etc/fstab",
+        ));
+    }
+
+    Ok(())
+}
