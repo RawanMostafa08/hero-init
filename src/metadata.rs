@@ -2,27 +2,40 @@ use crate::config::Metadata;
 use libc::{SYS_sethostname, syscall};
 use std::ffi::CString;
 use std::fs;
-use std::io;
+use std::io::Error;
+use std::io::Result;
 use std::io::Write;
 
-pub fn apply(metadata: &Metadata) -> io::Result<()> {
-    // Persist instance ID
-    write_instance_id(&metadata.instance_id, "/var/lib/hero-init/instance-id")?;
-
-    // Settting hostname
+// Set system hostname
+pub fn set_hostname(hostname: &str) -> Result<()> {
     // 1- writing to /etc/hostname
-    write_hostname_file(&metadata.hostname, "/etc/hostname")?;
-
-    // 3- update hosts file
-    update_hosts_file(&metadata.hostname, "/etc/hosts")?;
-
-    // 4- using libc syscall
-    set_hostname_syscall(&metadata.hostname)?;
-
+    write_hostname_file(hostname, "/etc/hostname")?;
+    // 2- using libc syscall
+    set_hostname_syscall(hostname)?;
     Ok(())
 }
 
-fn write_instance_id(instance_id: &str, instance_id_path: &str) -> io::Result<()> {
+fn write_hostname_file(hostname: &str, path: &str) -> Result<()> {
+    fs::write(path, hostname.as_bytes())
+}
+
+fn set_hostname_syscall(hostname: &str) -> Result<()> {
+    let cstr = CString::new(hostname).unwrap();
+    let res = unsafe { syscall(SYS_sethostname, cstr.as_ptr(), hostname.len()) };
+
+    if res == 0 {
+        Ok(())
+    } else {
+        Err(Error::last_os_error())
+    }
+}
+
+// Write instance ID to persistent storage
+pub fn write_instance_id(instance_id: &str) -> Result<()> {
+    write_instance_id_testable(instance_id, "/var/lib/hero-init/instance-id")
+}
+
+fn write_instance_id_testable(instance_id: &str, instance_id_path: &str) -> Result<()> {
     use std::fs;
     use std::path::Path;
 
@@ -34,11 +47,13 @@ fn write_instance_id(instance_id: &str, instance_id_path: &str) -> io::Result<()
     Ok(())
 }
 
-fn write_hostname_file(hostname: &str, path: &str) -> io::Result<()> {
-    fs::write(path, hostname.as_bytes())
+// Update /etc/hosts file
+pub fn update_hosts_file(hostname: &str) -> Result<()> {
+    update_hosts_file_testable(hostname, "/etc/hosts")?;
+    Ok(())
 }
 
-fn update_hosts_file(hostname: &str, path: &str) -> io::Result<()> {
+fn update_hosts_file_testable(hostname: &str, path: &str) -> Result<()> {
     let mut hosts_file = fs::OpenOptions::new()
         .append(true)
         .create(true)
@@ -47,15 +62,17 @@ fn update_hosts_file(hostname: &str, path: &str) -> io::Result<()> {
     Ok(())
 }
 
-fn set_hostname_syscall(hostname: &str) -> io::Result<()> {
-    let cstr = CString::new(hostname).unwrap();
-    let res = unsafe { syscall(SYS_sethostname, cstr.as_ptr(), hostname.len()) };
+pub fn apply(metadata: &Metadata) -> Result<()> {
+    // Persist instance ID
+    write_instance_id(&metadata.instance_id)?;
 
-    if res == 0 {
-        Ok(())
-    } else {
-        Err(io::Error::last_os_error())
-    }
+    // Settting hostname
+    set_hostname(&metadata.hostname)?;
+
+    // Update hosts file
+    update_hosts_file(&metadata.hostname)?;
+
+    Ok(())
 }
 
 // Unit tests
@@ -70,7 +87,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let instance_id_path = temp_dir.path().join("instance-id");
         let instance_id = "test-instance-123";
-        write_instance_id(instance_id, instance_id_path.to_str().unwrap()).unwrap();
+        write_instance_id_testable(instance_id, instance_id_path.to_str().unwrap()).unwrap();
 
         assert_eq!(fs::read_to_string(&instance_id_path).unwrap(), instance_id);
     }
@@ -90,7 +107,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let hostname = "test-host";
         let hosts_path = temp_dir.path().join("hosts");
-        update_hosts_file(hostname, hosts_path.to_str().unwrap()).unwrap();
+        update_hosts_file_testable(hostname, hosts_path.to_str().unwrap()).unwrap();
         let content = fs::read_to_string(&hosts_path).unwrap();
         assert!(content.contains(&format!("127.0.1.1 {}", hostname)));
     }

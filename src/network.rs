@@ -6,6 +6,7 @@ use std::io;
 use std::path::Path;
 use std::process::Command;
 
+// Define the network configuration types
 #[derive(Debug, Clone, Copy, Deserialize, Default, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum NetworkConfigType {
@@ -14,6 +15,7 @@ pub enum NetworkConfigType {
     Ifupdown,
 }
 
+// Write the network configuration to the appropriate file based on provider
 pub fn write_network_config(config_yaml: &str, provider: NetworkConfigType) -> io::Result<()> {
     let (path, content) = match provider {
         NetworkConfigType::Netplan => ("/etc/netplan/01-hero-init.yaml", config_yaml),
@@ -28,6 +30,7 @@ pub fn write_network_config(config_yaml: &str, provider: NetworkConfigType) -> i
     Ok(())
 }
 
+// Apply the network configuration using the appropriate command
 pub fn apply_network_config(provider: NetworkConfigType) -> io::Result<()> {
     let status = match provider {
         NetworkConfigType::Netplan => Command::new("netplan").arg("apply").status()?,
@@ -44,6 +47,7 @@ pub fn apply_network_config(provider: NetworkConfigType) -> io::Result<()> {
     }
 }
 
+// Main function to apply network configuration
 pub fn apply(network: &Network) -> Result<()> {
     // serialize network config to YAML
     let config_yaml = serde_yaml::to_string(&network.interfaces)?;
