@@ -28,6 +28,7 @@ pub struct User {
     pub ssh_authorized_keys: Vec<String>,
     #[serde(default)]
     pub groups: Vec<String>,
+    pub sudo: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

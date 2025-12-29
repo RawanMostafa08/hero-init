@@ -3,9 +3,13 @@ use hero_init::*;
 use anyhow::Result;
 use config::Configuration;
 use std::fs;
+use std::path::Path;
 
-fn load_config() -> Result<Configuration> {
-    let data = fs::read_to_string("/config/hero-init.yaml")?;
+const DEVICE_LABEL: &str = "SEED";
+const MOUNT_PATH: &str = "/run/hero-init/seed";
+
+fn load_config(path: &Path) -> Result<Configuration> {
+    let data = fs::read_to_string(path)?;
     Ok(serde_yaml::from_str(&data)?)
 }
 
@@ -21,7 +25,15 @@ fn main() -> Result<()> {
     systemd_journal_logger::init().unwrap();
     log::info!("hero-init starting");
 
-    let cfg = load_config()?;
+    // Discover and mount the SEED device
+    let seed_device = discovery::find_seed_device(DEVICE_LABEL).expect("no SEED device found");
+    log::info!("Found SEED device at {:?}", seed_device);
+
+    let mount_path = Path::new(MOUNT_PATH);
+    discovery::mount_seed(seed_device, mount_path)?;
+
+    // Load configuration from the mounted SEED
+    let cfg = load_config(mount_path.join("hero-init.yaml").as_path())?;
 
     let is_first = is_first_boot(&cfg)?;
     if is_first {

@@ -17,7 +17,6 @@ pub fn find_seed_device(label: &str) -> Option<PathBuf> {
             return fs::read_link(entry.path()).ok();
         }
     }
-
     None
 }
 

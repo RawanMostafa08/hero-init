@@ -80,6 +80,10 @@ pub fn apply(users: &[User]) -> Result<()> {
         let home_dir = resolve_home_dir(&user.name)?;
         set_permissions(&home_dir.join(".ssh"), 0o700, 0, 0)?;
         set_permissions(&home_dir.join(".ssh/authorized_keys"), 0o600, 0, 0)?;
+
+        if user.sudo {
+            add_sudo_rule(&user.name)?;
+        }
     }
     Ok(())
 }
