@@ -7,7 +7,7 @@ pub struct Configuration {
     pub metadata: Metadata,
     pub network: Network,
     pub users: Vec<User>,
-    pub mounts: Vec<Mount>,
+    // TODO: add mounts if needed
 }
 
 #[derive(Debug, Deserialize, Default)]
@@ -28,14 +28,6 @@ pub struct User {
     pub ssh_authorized_keys: Vec<String>,
     #[serde(default)]
     pub groups: Vec<String>,
-}
-
-#[derive(Debug, Deserialize, Default)]
-pub struct Mount {
-    pub source: String,
-    pub target: String,
-    #[serde(default)]
-    pub r#type: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default)]

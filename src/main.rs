@@ -29,7 +29,6 @@ fn main() -> Result<()> {
         metadata::apply(&cfg.metadata)?;
         network::apply(&cfg.network)?;
         users::apply(&cfg.users)?;
-        // mounts::apply(&cfg.mounts)?;
     } else {
         log::info!("Subsequent boot, skipping per-instance configuration");
     }
