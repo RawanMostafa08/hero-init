@@ -31,14 +31,14 @@ pub struct User {
     pub sudo: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct Route {
     pub to: String,
     pub via: String,
     pub metric: Option<u32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct NameServer {
     pub search: Vec<String>,
     pub addresses: Vec<String>,

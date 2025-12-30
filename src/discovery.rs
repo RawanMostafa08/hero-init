@@ -9,14 +9,13 @@ const SECTOR_SIZE: u64 = 512;
 
 // Search for a block device with the given label in /dev/disk/by-label
 pub fn find_seed_device(label: &str) -> Option<PathBuf> {
-    let by_label = Path::new(paths::SEED_DEVICE_PATH);
+    let by_label = Path::new("/dev/disk/by-label");
 
-    let entries = fs::read_dir(by_label).ok()?;
-
-    for entry in entries.flatten() {
+    for entry in fs::read_dir(by_label).ok()? {
+        let entry = entry.ok()?;
         if entry.file_name() == label {
-            // symlink -> real block device (e.g., /dev/sda1)
-            return fs::read_link(entry.path()).ok();
+            // Resolve the symlink to the real device
+            return fs::canonicalize(entry.path()).ok();
         }
     }
     None
