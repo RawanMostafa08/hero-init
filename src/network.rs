@@ -1,4 +1,5 @@
 use crate::config::Network;
+use crate::paths;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -18,8 +19,8 @@ pub enum NetworkConfigType {
 // Write the network configuration to the appropriate file based on provider
 pub fn write_network_config(config_yaml: &str, provider: NetworkConfigType) -> io::Result<()> {
     let (path, content) = match provider {
-        NetworkConfigType::Netplan => ("/etc/netplan/01-hero-init.yaml", config_yaml),
-        NetworkConfigType::Ifupdown => ("/etc/network/interfaces", config_yaml),
+        NetworkConfigType::Netplan => (paths::NET_PLAN_CONFIG_PATH, config_yaml),
+        NetworkConfigType::Ifupdown => (paths::IF_UP_DOWN_CONFIG_PATH, config_yaml),
     };
 
     if let Some(parent) = Path::new(path).parent() {

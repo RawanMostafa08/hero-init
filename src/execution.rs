@@ -6,6 +6,8 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
 
+use crate::paths;
+
 // Run a shell command with specified environment variables
 pub fn run_cmd(command: &str, env_vars: HashMap<String, String>) -> Result<()> {
     let mut cmd = Command::new("sh");
@@ -61,7 +63,7 @@ pub fn mount_fstab_entry(
     );
 
     {
-        let mut fstab = OpenOptions::new().append(true).open("/etc/fstab")?;
+        let mut fstab = OpenOptions::new().append(true).open(paths::FSTAB_PATH)?;
 
         fstab.write_all(entry.as_bytes())?;
     }
@@ -70,7 +72,7 @@ pub fn mount_fstab_entry(
 
     if !status.success() {
         return Err(io::Error::other(
-            "mount -a failed after updating /etc/fstab",
+            "mount -a failed after updating filesystem table",
         ));
     }
 

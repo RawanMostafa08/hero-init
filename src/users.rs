@@ -1,4 +1,5 @@
 use crate::config::User;
+use crate::paths;
 use anyhow::Result;
 use nix::unistd::{Gid, Uid, chown};
 use std::fs;
@@ -35,7 +36,7 @@ pub fn inject_ssh_keys(username: &str, keys: &[String]) -> Result<()> {
 }
 
 fn resolve_home_dir(username: &str) -> Result<PathBuf> {
-    let passwd = fs::read_to_string("/etc/passwd")?;
+    let passwd = fs::read_to_string(paths::PASSWD_FILE_PATH)?;
 
     // ‘/etc/passwd’, the passwd file consist of user information includes seven columns separated by colons.
     // Username:password:user-id:group-id:user-info:home-directory:login-shell
@@ -47,7 +48,7 @@ fn resolve_home_dir(username: &str) -> Result<PathBuf> {
         }
     }
 
-    anyhow::bail!("User {} not found in /etc/passwd", username);
+    anyhow::bail!("User {} not found in passwd file", username);
 }
 
 // Set file permissions and ownership
@@ -59,7 +60,7 @@ pub fn set_permissions(path: &Path, mode: u32, uid: u32, gid: u32) -> Result<()>
 
 // Add sudo rule for user
 pub fn add_sudo_rule(username: &str) -> Result<()> {
-    let path = format!("/etc/sudoers.d/{}", username);
+    let path = format!("{}/{}", paths::SUDOERS_PATH, username);
     let rule = format!("{} ALL=(ALL) NOPASSWD:ALL\n", username);
 
     fs::write(&path, rule)?;
@@ -72,14 +73,14 @@ pub fn apply(users: &[User]) -> Result<()> {
     for user in users {
         // TODO: only support root users if needed
         let groups_ref: Vec<&str> = user.groups.iter().map(|s| s.as_str()).collect();
-        add_system_user(&user.name, "/bin/bash", &groups_ref)?;
+        add_system_user(&user.name, paths::BASH_PATH, &groups_ref)?;
 
         inject_ssh_keys(&user.name, &user.ssh_authorized_keys)?;
 
         // Set proper permissions for .ssh
         let home_dir = resolve_home_dir(&user.name)?;
         set_permissions(&home_dir.join(".ssh"), 0o700, 0, 0)?;
-        set_permissions(&home_dir.join(".ssh/authorized_keys"), 0o600, 0, 0)?;
+        set_permissions(&home_dir.join(paths::AUTH_KEYS_PATH), 0o600, 0, 0)?;
 
         if user.sudo {
             add_sudo_rule(&user.name)?;

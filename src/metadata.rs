@@ -1,4 +1,5 @@
 use crate::config::Metadata;
+use crate::paths;
 use libc::{SYS_sethostname, syscall};
 use std::ffi::CString;
 use std::fs;
@@ -9,7 +10,7 @@ use std::io::Write;
 // Set system hostname
 pub fn set_hostname(hostname: &str) -> Result<()> {
     // 1- writing to /etc/hostname
-    write_hostname_file(hostname, "/etc/hostname")?;
+    write_hostname_file(hostname, paths::HOSTNAME_PATH)?;
     // 2- using libc syscall
     set_hostname_syscall(hostname)?;
     Ok(())
@@ -32,7 +33,7 @@ fn set_hostname_syscall(hostname: &str) -> Result<()> {
 
 // Write instance ID to persistent storage
 pub fn write_instance_id(instance_id: &str) -> Result<()> {
-    write_instance_id_testable(instance_id, "/var/lib/hero-init/instance-id")
+    write_instance_id_testable(instance_id, paths::INSTANCE_ID_PATH)
 }
 
 fn write_instance_id_testable(instance_id: &str, instance_id_path: &str) -> Result<()> {
@@ -49,7 +50,7 @@ fn write_instance_id_testable(instance_id: &str, instance_id_path: &str) -> Resu
 
 // Update /etc/hosts file
 pub fn update_hosts_file(hostname: &str) -> Result<()> {
-    update_hosts_file_testable(hostname, "/etc/hosts")?;
+    update_hosts_file_testable(hostname, paths::HOSTS_FILE_PATH)?;
     Ok(())
 }
 

@@ -3,11 +3,13 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
+use crate::paths;
+
 const SECTOR_SIZE: u64 = 512;
 
 // Search for a block device with the given label in /dev/disk/by-label
 pub fn find_seed_device(label: &str) -> Option<PathBuf> {
-    let by_label = Path::new("/dev/disk/by-label");
+    let by_label = Path::new(paths::SEED_DEVICE_PATH);
 
     let entries = fs::read_dir(by_label).ok()?;
 
@@ -47,7 +49,9 @@ pub fn get_disk_capacity(device: &Path) -> io::Result<u64> {
         .and_then(|n| n.to_str())
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "invalid device"))?;
 
-    let size_path = Path::new("/sys/class/block").join(name).join("size");
+    let size_path = Path::new(paths::DEVICE_CAPACITY_PATH)
+        .join(name)
+        .join("size");
 
     let sectors: u64 = fs::read_to_string(size_path)?
         .trim()
