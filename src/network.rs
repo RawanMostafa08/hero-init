@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io;
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
 
@@ -23,7 +24,7 @@ struct NetplanInner {
 
 #[derive(Serialize)]
 struct NetplanEthernet {
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "match", skip_serializing_if = "Option::is_none")]
     match_: Option<Match>,
     dhcp4: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -35,7 +36,7 @@ struct NetplanEthernet {
     #[serde(skip_serializing_if = "Option::is_none")]
     routes: Option<Vec<Route>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    nameservers: Option<Vec<NameServer>>,
+    nameservers: Option<NameServers>,
 }
 
 #[derive(Serialize)]
@@ -58,6 +59,9 @@ fn write_network_config_testable(config_yaml: &str, path: &str) -> io::Result<()
     }
 
     fs::write(path, config_yaml)?;
+
+    fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
+
     Ok(())
 }
 
@@ -164,10 +168,10 @@ mod tests {
                     gateway4: Some("10.0.0.1".to_string()),
                     gateway6: None,
                     routes: None,
-                    nameservers: Some(vec![NameServer {
+                    nameservers: Some(NameServers {
                         search: vec!["example.com".to_string()],
                         addresses: vec!["8.8.8.8".to_string(), "1.1.1.1".to_string()],
-                    }]),
+                    }),
                 },
             ],
         };

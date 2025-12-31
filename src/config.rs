@@ -35,11 +35,12 @@ pub struct User {
 pub struct Route {
     pub to: String,
     pub via: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub metric: Option<u32>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
-pub struct NameServer {
+pub struct NameServers {
     pub search: Vec<String>,
     pub addresses: Vec<String>,
 }
@@ -53,5 +54,5 @@ pub struct Ethernet {
     pub gateway4: Option<String>,
     pub gateway6: Option<String>,
     pub routes: Option<Vec<Route>>,
-    pub nameservers: Option<Vec<NameServer>>,
+    pub nameservers: Option<NameServers>,
 }
