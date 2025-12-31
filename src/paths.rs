@@ -11,4 +11,3 @@ pub const IF_UP_DOWN_CONFIG_PATH: &str = "/etc/network/interfaces";
 pub const PASSWD_FILE_PATH: &str = "/etc/passwd";
 pub const SUDOERS_PATH: &str = "/etc/sudoers.d";
 pub const BASH_PATH: &str = "/bin/bash";
-pub const AUTH_KEYS_PATH: &str = ".ssh/authorized_keys";

@@ -1,6 +1,7 @@
 use crate::config::User;
 use crate::paths;
 use anyhow::Result;
+use log::info;
 use nix::unistd::{Gid, Uid, chown};
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
@@ -9,6 +10,12 @@ use std::process::Command;
 
 // Create user if not exists
 pub fn add_system_user(username: &str, shell: &str, groups: &[&str]) -> Result<()> {
+    // Check if user already exists
+    if Command::new("id").arg(username).status()?.success() {
+        info!("User {} already exists, skipping creation", username);
+        return Ok(());
+    }
+
     let mut cmd = Command::new("useradd");
     cmd.args(["-m", "-s", shell]);
 
@@ -26,12 +33,17 @@ pub fn add_system_user(username: &str, shell: &str, groups: &[&str]) -> Result<(
 
 // Set up SSH authorized keys
 pub fn inject_ssh_keys(username: &str, keys: &[String]) -> Result<()> {
+    if keys.is_empty() {
+        info!("No SSH keys for {}, skipping", username);
+        return Ok(());
+    }
     let home = resolve_home_dir(username)?;
     let ssh_dir = home.join(".ssh");
     fs::create_dir_all(&ssh_dir)?;
 
     let auth_keys = ssh_dir.join("authorized_keys");
-    fs::write(&auth_keys, keys.join("\n"))?;
+    let content = keys.join("\n") + "\n";
+    fs::write(&auth_keys, content)?;
     Ok(())
 }
 
@@ -43,7 +55,7 @@ fn resolve_home_dir(username: &str) -> Result<PathBuf> {
 
     for line in passwd.lines() {
         let parts: Vec<&str> = line.split(':').collect();
-        if parts.len() > 5 && parts[0] == username {
+        if parts.len() >= 6 && parts[0] == username {
             return Ok(PathBuf::from(parts[5])); // home-directory
         }
     }
@@ -63,13 +75,20 @@ pub fn add_sudo_rule(username: &str) -> Result<()> {
     let path = format!("{}/{}", paths::SUDOERS_PATH, username);
     let rule = format!("{} ALL=(ALL) NOPASSWD:ALL\n", username);
 
+    fs::create_dir_all(paths::SUDOERS_PATH)?;
     fs::write(&path, rule)?;
     fs::set_permissions(&path, fs::Permissions::from_mode(0o440))?;
 
+    info!("Added sudoers rule for {}", username);
     Ok(())
 }
 
 pub fn apply(users: &[User]) -> Result<()> {
+    if users.is_empty() {
+        info!("No users to configure");
+        return Ok(());
+    }
+
     for user in users {
         // TODO: only support root users if needed
         let groups_ref: Vec<&str> = user.groups.iter().map(|s| s.as_str()).collect();
@@ -79,8 +98,17 @@ pub fn apply(users: &[User]) -> Result<()> {
 
         // Set proper permissions for .ssh
         let home_dir = resolve_home_dir(&user.name)?;
-        set_permissions(&home_dir.join(".ssh"), 0o700, 0, 0)?;
-        set_permissions(&home_dir.join(paths::AUTH_KEYS_PATH), 0o600, 0, 0)?;
+        let ssh_dir = home_dir.join(".ssh");
+        let auth_keys = ssh_dir.join("authorized_keys");
+
+        set_permissions(&ssh_dir, 0o700, 0, 0)?;
+        if auth_keys.exists() {
+            set_permissions(&auth_keys, 0o600, 0, 0)?;
+        }
+        // ensure home dir has owner's full permissions but not others
+        let mut home_perms = fs::metadata(&home_dir)?.permissions();
+        home_perms.set_mode(0o755); // drwxr-xr-x
+        fs::set_permissions(&home_dir, home_perms)?;
 
         if user.sudo {
             add_sudo_rule(&user.name)?;
