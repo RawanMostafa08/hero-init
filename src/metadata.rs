@@ -33,10 +33,10 @@ fn set_hostname_syscall(hostname: &str) -> Result<()> {
 
 // Write instance ID to persistent storage
 pub fn write_instance_id(instance_id: &str) -> Result<()> {
-    write_instance_id_testable(instance_id, paths::INSTANCE_ID_PATH)
+    write_instance_id_with_path(instance_id, paths::INSTANCE_ID_PATH)
 }
 
-fn write_instance_id_testable(instance_id: &str, instance_id_path: &str) -> Result<()> {
+fn write_instance_id_with_path(instance_id: &str, instance_id_path: &str) -> Result<()> {
     use std::fs;
     use std::path::Path;
 
@@ -50,11 +50,11 @@ fn write_instance_id_testable(instance_id: &str, instance_id_path: &str) -> Resu
 
 // Update /etc/hosts file
 pub fn update_hosts_file(hostname: &str) -> Result<()> {
-    update_hosts_file_testable(hostname, paths::HOSTS_FILE_PATH)?;
+    update_hosts_file_with_path(hostname, paths::HOSTS_FILE_PATH)?;
     Ok(())
 }
 
-fn update_hosts_file_testable(hostname: &str, path: &str) -> Result<()> {
+fn update_hosts_file_with_path(hostname: &str, path: &str) -> Result<()> {
     let mut hosts_file = fs::OpenOptions::new()
         .append(true)
         .create(true)
@@ -88,7 +88,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let instance_id_path = temp_dir.path().join("instance-id");
         let instance_id = "test-instance-123";
-        write_instance_id_testable(instance_id, instance_id_path.to_str().unwrap()).unwrap();
+        write_instance_id_with_path(instance_id, instance_id_path.to_str().unwrap()).unwrap();
 
         assert_eq!(fs::read_to_string(&instance_id_path).unwrap(), instance_id);
     }
@@ -108,7 +108,7 @@ mod tests {
         let temp_dir = TempDir::new().unwrap();
         let hostname = "test-host";
         let hosts_path = temp_dir.path().join("hosts");
-        update_hosts_file_testable(hostname, hosts_path.to_str().unwrap()).unwrap();
+        update_hosts_file_with_path(hostname, hosts_path.to_str().unwrap()).unwrap();
         let content = fs::read_to_string(&hosts_path).unwrap();
         assert!(content.contains(&format!("127.0.1.1 {}", hostname)));
     }

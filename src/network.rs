@@ -53,7 +53,7 @@ pub enum NetworkConfigType {
     Ifupdown,
 }
 
-fn write_network_config_testable(config_yaml: &str, path: &str) -> io::Result<()> {
+fn write_network_config_with_path(config_yaml: &str, path: &str) -> io::Result<()> {
     if let Some(parent) = Path::new(path).parent() {
         fs::create_dir_all(parent)?;
     }
@@ -72,7 +72,7 @@ pub fn write_network_config(config_yaml: &str, provider: NetworkConfigType) -> i
         NetworkConfigType::Ifupdown => paths::IF_UP_DOWN_CONFIG_PATH,
     };
 
-    write_network_config_testable(config_yaml, path)
+    write_network_config_with_path(config_yaml, path)
 }
 
 // Apply the network configuration using the appropriate command
@@ -186,7 +186,7 @@ mod tests {
             .to_str()
             .expect("Failed to convert temp path to string");
 
-        write_network_config_testable(&config_yaml.unwrap(), test_output_path_str)
+        write_network_config_with_path(&config_yaml.unwrap(), test_output_path_str)
             .expect("Failed to write test output file");
 
         let content = fs::read_to_string(test_output_path).expect("Failed to read generated file");
