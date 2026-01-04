@@ -63,6 +63,13 @@ fn main() -> Result<()> {
         state::save_state(&state)?;
     }
 
+    if !state::is_module_complete(&state, "runcmd") && !cfg.runcmd.is_empty() {
+        log::info!("Running user commands ({} commands)", cfg.runcmd.len());
+        execution::apply(&cfg.runcmd)?;
+        state::mark_module_complete(&mut state, "runcmd");
+        state::save_state(&state)?;
+    }
+
     log::info!("hero-init completed successfully");
     Ok(())
 }
