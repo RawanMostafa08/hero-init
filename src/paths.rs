@@ -1,5 +1,5 @@
 pub const SEED_DEVICE_PATH: &str = "/dev/disk/by-label";
-pub const DEVICE_CAPACITY_PATH: &str = "/sys/class/block";
+pub const DEVICE_CAPACITY_PATH: &str = "/sys/class/block/size";
 pub const FSTAB_PATH: &str = "/etc/fstab";
 pub const MOUNT_PATH: &str = "/run/hero-init/seed";
 pub const INSTANCE_ID_PATH: &str = "/var/lib/hero-init/instance-id";
@@ -11,3 +11,4 @@ pub const IF_UP_DOWN_CONFIG_PATH: &str = "/etc/network/interfaces";
 pub const PASSWD_FILE_PATH: &str = "/etc/passwd";
 pub const SUDOERS_PATH: &str = "/etc/sudoers.d";
 pub const BASH_PATH: &str = "/bin/bash";
+pub const BY_LABEL_PATH: &str = "/dev/disk/by-label";

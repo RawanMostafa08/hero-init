@@ -37,7 +37,7 @@ pub fn inject_ssh_keys(username: &str, keys: &[String]) -> Result<()> {
         info!("No SSH keys for {}, skipping", username);
         return Ok(());
     }
-    let home = resolve_home_dir(username)?;
+    let home = resolve_home_dir(username, paths::PASSWD_FILE_PATH)?;
     let ssh_dir = home.join(".ssh");
     fs::create_dir_all(&ssh_dir)?;
 
@@ -47,8 +47,8 @@ pub fn inject_ssh_keys(username: &str, keys: &[String]) -> Result<()> {
     Ok(())
 }
 
-fn resolve_home_dir(username: &str) -> Result<PathBuf> {
-    let passwd = fs::read_to_string(paths::PASSWD_FILE_PATH)?;
+fn resolve_home_dir(username: &str, path: &str) -> Result<PathBuf> {
+    let passwd = fs::read_to_string(path)?;
 
     // ‘/etc/passwd’, the passwd file consist of user information includes seven columns separated by colons.
     // Username:password:user-id:group-id:user-info:home-directory:login-shell
@@ -72,10 +72,14 @@ pub fn set_permissions(path: &Path, mode: u32, uid: u32, gid: u32) -> Result<()>
 
 // Add sudo rule for user
 pub fn add_sudo_rule(username: &str) -> Result<()> {
-    let path = format!("{}/{}", paths::SUDOERS_PATH, username);
+    add_sudo_rule_with_path(username, paths::SUDOERS_PATH)
+}
+
+fn add_sudo_rule_with_path(username: &str, sudoers_path: &str) -> Result<()> {
+    let path = format!("{}/{}", sudoers_path, username);
     let rule = format!("{} ALL=(ALL) NOPASSWD:ALL\n", username);
 
-    fs::create_dir_all(paths::SUDOERS_PATH)?;
+    fs::create_dir_all(sudoers_path)?;
     fs::write(&path, rule)?;
     fs::set_permissions(&path, fs::Permissions::from_mode(0o440))?;
 
@@ -84,8 +88,8 @@ pub fn add_sudo_rule(username: &str) -> Result<()> {
 }
 
 // Get user IDs from /etc/passwd
-fn get_user_ids(username: &str) -> Result<(u32, u32)> {
-    let passwd = fs::read_to_string(paths::PASSWD_FILE_PATH)?;
+fn get_user_ids(username: &str, path: &str) -> Result<(u32, u32)> {
+    let passwd = fs::read_to_string(path)?;
 
     for line in passwd.lines() {
         let parts: Vec<&str> = line.split(':').collect();
@@ -106,15 +110,14 @@ pub fn apply(users: &[User]) -> Result<()> {
     }
 
     for user in users {
-        // TODO: only support root users if needed
         let groups_ref: Vec<&str> = user.groups.iter().map(|s| s.as_str()).collect();
         add_system_user(&user.name, paths::BASH_PATH, &groups_ref)?;
 
         inject_ssh_keys(&user.name, &user.ssh_authorized_keys)?;
 
         // Set proper permissions for .ssh
-        let home_dir = resolve_home_dir(&user.name)?;
-        let (uid, gid) = get_user_ids(&user.name)?;
+        let home_dir = resolve_home_dir(&user.name, paths::PASSWD_FILE_PATH)?;
+        let (uid, gid) = get_user_ids(&user.name, paths::PASSWD_FILE_PATH)?;
 
         let ssh_dir = home_dir.join(".ssh");
         let auth_keys = ssh_dir.join("authorized_keys");
@@ -134,4 +137,72 @@ pub fn apply(users: &[User]) -> Result<()> {
         }
     }
     Ok(())
+}
+
+// Unit tests (mocked for system operations)
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::os::unix::fs::MetadataExt;
+    use std::path::PathBuf;
+    use tempfile::TempDir;
+
+    #[test]
+    fn test_resolve_home_dir() {
+        let temp_dir = TempDir::new().unwrap();
+        let passwd_path = temp_dir.path().join("passwd");
+        let sample_passwd = "testuser:x:1000:1000:Test User:/home/testuser:/bin/bash\n";
+        fs::write(&passwd_path, sample_passwd).unwrap();
+
+        let home = resolve_home_dir("testuser", passwd_path.to_str().unwrap()).unwrap();
+        assert_eq!(home, PathBuf::from("/home/testuser"));
+    }
+
+    #[test]
+    fn test_get_user_ids() {
+        let temp_dir = TempDir::new().unwrap();
+        let passwd_path = temp_dir.path().join("passwd");
+        let sample_passwd = "testuser:x:1000:1000:Test User:/home/testuser:/bin/bash\n";
+        fs::write(&passwd_path, sample_passwd).unwrap();
+
+        let (uid, gid) = get_user_ids("testuser", passwd_path.to_str().unwrap()).unwrap();
+        assert_eq!(uid, 1000);
+        assert_eq!(gid, 1000);
+    }
+
+    #[test]
+    fn test_set_permissions() {
+        let temp_dir = TempDir::new().unwrap();
+        let test_file = temp_dir.path().join("test.txt");
+        fs::write(&test_file, "test").unwrap();
+        set_permissions(&test_file, 0o644, 1000, 1000).unwrap();
+
+        let metadata = fs::metadata(&test_file).unwrap();
+        let mode = metadata.permissions().mode();
+        // mask with 0o7777 to get permission bits
+        assert_eq!(mode & 0o7777, 0o644);
+
+        // Verify ownership
+        assert_eq!(metadata.uid(), 1000);
+        assert_eq!(metadata.gid(), 1000);
+    }
+
+    #[test]
+    fn test_add_sudo_rule() {
+        let temp_dir = TempDir::new().unwrap();
+        let sudoers_dir = temp_dir.path().join("sudoers");
+        fs::create_dir_all(&sudoers_dir).unwrap();
+        add_sudo_rule_with_path("testuser", sudoers_dir.to_str().unwrap()).unwrap();
+        let rule_path = Path::new(sudoers_dir.to_str().unwrap()).join("testuser");
+        let rule_content = fs::read_to_string(&rule_path).unwrap();
+        assert_eq!(rule_content, "testuser ALL=(ALL) NOPASSWD:ALL\n");
+    }
+
+    #[test]
+    fn test_apply_no_users() {
+        let users = vec![];
+        let result = apply(&users);
+        assert!(result.is_ok());
+    }
 }
