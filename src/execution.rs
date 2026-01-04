@@ -6,7 +6,6 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
 
-
 // Run a shell command with specified environment variables
 pub fn run_cmd(command: &str, env_vars: HashMap<String, String>) -> Result<()> {
     let mut cmd = Command::new("sh");

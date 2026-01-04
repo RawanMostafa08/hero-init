@@ -46,21 +46,21 @@ fn main() -> Result<()> {
     log::info!("First boot detected, applying configuration");
 
     if !state::is_module_complete(&state, "metadata") {
-    metadata::apply(&cfg.metadata)?;
-    state::mark_module_complete(&mut state, "metadata");
-    state::save_state(&state)?;
+        metadata::apply(&cfg.metadata)?;
+        state::mark_module_complete(&mut state, "metadata");
+        state::save_state(&state)?;
     }
 
     if !state::is_module_complete(&state, "network") {
-    network::apply(&cfg.network)?;
-    state::mark_module_complete(&mut state, "network");
-    state::save_state(&state)?;
+        network::apply(&cfg.network)?;
+        state::mark_module_complete(&mut state, "network");
+        state::save_state(&state)?;
     }
 
     if !state::is_module_complete(&state, "users") {
-    users::apply(&cfg.users)?;
-    state::mark_module_complete(&mut state, "users");
-    state::save_state(&state)?;
+        users::apply(&cfg.users)?;
+        state::mark_module_complete(&mut state, "users");
+        state::save_state(&state)?;
     }
 
     log::info!("hero-init completed successfully");
