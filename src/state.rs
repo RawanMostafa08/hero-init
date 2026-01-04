@@ -34,7 +34,7 @@ fn load_state_with_path(path: &str) -> Result<HeroState> {
 // Saves HeroState to disk
 pub fn save_state(state: &HeroState) -> Result<()> {
     let path = Path::new(&paths::HERO_STATE_PATH);
-    save_state_with_path(state, &path)
+    save_state_with_path(state, path)
 }
 
 fn save_state_with_path(state: &HeroState, path: &path::Path) -> Result<()> {
