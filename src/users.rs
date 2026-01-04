@@ -83,6 +83,22 @@ pub fn add_sudo_rule(username: &str) -> Result<()> {
     Ok(())
 }
 
+// Get user IDs from /etc/passwd
+fn get_user_ids(username: &str) -> Result<(u32, u32)> {
+    let passwd = fs::read_to_string(paths::PASSWD_FILE_PATH)?;
+
+    for line in passwd.lines() {
+        let parts: Vec<&str> = line.split(':').collect();
+        if parts.len() >= 4 && parts[0] == username {
+            let uid = parts[2].parse::<u32>()?;
+            let gid = parts[3].parse::<u32>()?;
+            return Ok((uid, gid));
+        }
+    }
+
+    anyhow::bail!("User {} not found in /etc/passwd", username)
+}
+
 pub fn apply(users: &[User]) -> Result<()> {
     if users.is_empty() {
         info!("No users to configure");
@@ -98,17 +114,20 @@ pub fn apply(users: &[User]) -> Result<()> {
 
         // Set proper permissions for .ssh
         let home_dir = resolve_home_dir(&user.name)?;
+        let (uid, gid) = get_user_ids(&user.name)?;
+
         let ssh_dir = home_dir.join(".ssh");
         let auth_keys = ssh_dir.join("authorized_keys");
 
-        set_permissions(&ssh_dir, 0o700, 0, 0)?;
+        // Set .ssh directory: owned by user, mode 700
+        set_permissions(&ssh_dir, 0o700, uid, gid)?;
+
+        // Set authorized_keys: owned by user, mode 600
         if auth_keys.exists() {
-            set_permissions(&auth_keys, 0o600, 0, 0)?;
+            set_permissions(&auth_keys, 0o600, uid, gid)?;
         }
-        // ensure home dir has owner's full permissions but not others
-        let mut home_perms = fs::metadata(&home_dir)?.permissions();
-        home_perms.set_mode(0o755); // drwxr-xr-x
-        fs::set_permissions(&home_dir, home_perms)?;
+
+        set_permissions(&home_dir, 0o755, uid, gid)?;
 
         if user.sudo {
             add_sudo_rule(&user.name)?;
