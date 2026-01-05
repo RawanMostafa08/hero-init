@@ -12,7 +12,7 @@ pub struct Configuration {
     pub runcmd: Vec<RunCommand>,
 }
 
-#[derive(Debug, Deserialize, Clone)]
+#[derive(Debug, Deserialize)]
 #[serde(untagged)]
 pub enum RunCommand {
     // Simple command string (e.g., "echo hello")
@@ -25,19 +25,19 @@ pub enum RunCommand {
     },
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize)]
 pub struct Network {
     pub interfaces: Vec<Ethernet>,
     pub provider: NetworkConfigType,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize)]
 pub struct Metadata {
     pub instance_id: String,
     pub hostname: String,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize)]
 pub struct User {
     pub name: String,
     pub ssh_authorized_keys: Vec<String>,
@@ -46,7 +46,7 @@ pub struct User {
     pub sudo: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Route {
     pub to: String,
     pub via: String,
@@ -54,13 +54,13 @@ pub struct Route {
     pub metric: Option<u32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct NameServers {
     pub search: Vec<String>,
     pub addresses: Vec<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Default)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Ethernet {
     pub name: String,
     pub mac: String,
