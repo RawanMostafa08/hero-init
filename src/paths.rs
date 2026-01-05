@@ -13,3 +13,5 @@ pub const SUDOERS_PATH: &str = "/etc/sudoers.d";
 pub const BASH_PATH: &str = "/bin/bash";
 pub const BY_LABEL_PATH: &str = "/dev/disk/by-label";
 pub const HERO_LOG_PATH: &str = "/var/log/hero-init.log";
+pub const HERO_LOG_FALLBACK_PATH: &str = "/tmp/hero-init.log";
+pub const HERO_LOG_DIR_PATH: &str = "/var/log";

@@ -24,8 +24,8 @@ fn is_first_boot(cfg: &Configuration) -> Result<bool> {
 fn init_logger() -> Result<()> {
     let log_file = {
         // Try /var/log first
-        if let Err(e) = std::fs::create_dir_all("/var/log") {
-            eprintln!("Could not create /var/log: {}", e);
+        if let Err(e) = std::fs::create_dir_all(paths::HERO_LOG_DIR_PATH) {
+            eprintln!("Could not create {}: {}", paths::HERO_LOG_DIR_PATH, e);
         }
 
         match std::fs::OpenOptions::new()
@@ -36,14 +36,15 @@ fn init_logger() -> Result<()> {
             Ok(file) => file,
             Err(e) => {
                 eprintln!(
-                    "Failed to open {}: {}, falling back to /tmp/hero-init.log",
+                    "Failed to open {}: {}, falling back to {}",
                     paths::HERO_LOG_PATH,
-                    e
+                    e,
+                    paths::HERO_LOG_FALLBACK_PATH
                 );
                 std::fs::OpenOptions::new()
                     .create(true)
                     .append(true)
-                    .open("/tmp/hero-init.log")?
+                    .open(paths::HERO_LOG_FALLBACK_PATH)?
             }
         }
     };
