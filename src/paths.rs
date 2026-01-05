@@ -1,5 +1,5 @@
 pub const SEED_DEVICE_PATH: &str = "/dev/disk/by-label";
-pub const DEVICE_CAPACITY_PATH: &str = "/sys/class/block/size";
+pub const DEVICE_CAPACITY_PATH: &str = "/sys/class/block";
 pub const FSTAB_PATH: &str = "/etc/fstab";
 pub const MOUNT_PATH: &str = "/run/hero-init/seed";
 pub const INSTANCE_ID_PATH: &str = "/var/lib/hero-init/instance-id";

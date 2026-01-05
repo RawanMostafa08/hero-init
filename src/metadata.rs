@@ -63,6 +63,7 @@ fn update_hosts_file_with_path(hostname: &str, path: &str) -> Result<()> {
     Ok(())
 }
 
+// Apply metadata settings: instance ID, hostname
 pub fn apply(metadata: &Metadata) -> Result<()> {
     // Persist instance ID
     write_instance_id(&metadata.instance_id)?;

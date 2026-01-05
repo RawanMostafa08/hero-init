@@ -103,6 +103,7 @@ fn get_user_ids(username: &str, path: &str) -> Result<(u32, u32)> {
     anyhow::bail!("User {} not found in /etc/passwd", username)
 }
 
+// Apply user configurations
 pub fn apply(users: &[User]) -> Result<()> {
     if users.is_empty() {
         info!("No users to configure");
@@ -139,7 +140,7 @@ pub fn apply(users: &[User]) -> Result<()> {
     Ok(())
 }
 
-// Unit tests (mocked for system operations)
+// Unit tests
 #[cfg(test)]
 mod tests {
     use super::*;
