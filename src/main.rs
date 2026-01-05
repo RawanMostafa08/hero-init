@@ -5,6 +5,8 @@ use config::Configuration;
 use std::fs;
 use std::path::Path;
 
+use simplelog::*;
+
 const DEVICE_LABEL: &str = "SEED";
 
 fn load_config(path: &Path) -> Result<Configuration> {
@@ -19,8 +21,44 @@ fn is_first_boot(cfg: &Configuration) -> Result<bool> {
     }
 }
 
+fn init_logger() -> Result<()> {
+    let log_file = {
+        // Try /var/log first
+        if let Err(e) = std::fs::create_dir_all("/var/log") {
+            eprintln!("Could not create /var/log: {}", e);
+        }
+
+        match std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(paths::HERO_LOG_PATH)
+        {
+            Ok(file) => file,
+            Err(e) => {
+                eprintln!(
+                    "Failed to open {}: {}, falling back to /tmp/hero-init.log",
+                    paths::HERO_LOG_PATH,
+                    e
+                );
+                std::fs::OpenOptions::new()
+                    .create(true)
+                    .append(true)
+                    .open("/tmp/hero-init.log")?
+            }
+        }
+    };
+
+    WriteLogger::init(LevelFilter::Info, Config::default(), log_file).map_err(|e| {
+        eprintln!("Failed to init logger: {}", e);
+        anyhow::anyhow!("Logger init failed")
+    })?;
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
-    systemd_journal_logger::init().unwrap();
+    init_logger()?;
+
     log::info!("hero-init starting");
 
     // Discover and mount the SEED device
