@@ -80,9 +80,7 @@ pub fn apply_network_config(provider: NetworkConfigType) -> io::Result<()> {
     let status = match provider {
         NetworkConfigType::Netplan => Command::new("netplan").arg("apply").status()?,
 
-        NetworkConfigType::Ifupdown => Command::new("systemctl")
-            .args(["restart", "networking"])
-            .status()?,
+        NetworkConfigType::Ifupdown => Command::new("ifup").args(["-a"]).status()?,
     };
 
     if status.success() {
@@ -128,14 +126,76 @@ fn net_to_yaml(wrapper: &NetplanWrapper) -> Result<String> {
     Ok(config_yaml)
 }
 
+fn ifupdown_to_text(network: &Network) -> Result<String> {
+    let mut config = String::new();
+
+    // Loopback interface
+    config.push_str("auto lo\n");
+    config.push_str("iface lo inet loopback\n\n");
+
+    for iface in &network.interfaces {
+        config.push_str(&format!("auto {}\n", iface.name));
+        config.push_str(&format!("iface {} inet ", iface.name));
+        if iface.dhcp4 {
+            config.push_str("dhcp\n");
+        } else {
+            config.push_str("static\n");
+            if let Some(ref addrs) = iface.addresses {
+                for addr in addrs {
+                    let parts: Vec<&str> = addr.split('/').collect();
+                    if parts.len() == 2 {
+                        let ip = parts[0];
+                        let prefix = parts[1];
+                        config.push_str(&format!("    address {}/{}", ip, prefix));
+                    } else {
+                        config.push_str(&format!("    address {}", addr));
+                    }
+                    config.push('\n');
+                }
+            }
+            if let Some(ref gw) = iface.gateway4 {
+                config.push_str(&format!("    gateway {}\n", gw));
+            }
+        }
+
+        if let Some(ref ns) = iface.nameservers {
+            if !ns.addresses.is_empty() {
+                let dns_addrs = ns.addresses.join(" ");
+                config.push_str(&format!("    dns-nameservers {}\n", dns_addrs));
+            }
+            if !ns.search.is_empty() {
+                let search = ns.search.join(" ");
+                config.push_str(&format!("    dns-search {}\n", search));
+            }
+        }
+
+        if let Some(ref routes) = iface.routes {
+            for route in routes {
+                let mut route_cmd = format!("{} via {}", route.to, route.via);
+                if let Some(metric) = route.metric {
+                    route_cmd.push_str(&format!(" metric {}", metric));
+                }
+                config.push_str(&format!("    post-up ip route add {}\n", route_cmd));
+            }
+        }
+
+        config.push('\n');
+    }
+
+    Ok(config)
+}
+
 // Main function to apply network configuration
 pub fn apply(network: &Network) -> Result<()> {
-    let wrapper = wrap_network(&network.interfaces);
+    let config_str = match network.provider {
+        NetworkConfigType::Netplan => {
+            let wrapper = wrap_network(&network.interfaces)?;
+            net_to_yaml(&wrapper)?
+        }
+        NetworkConfigType::Ifupdown => ifupdown_to_text(network)?,
+    };
 
-    let config_yaml = net_to_yaml(&wrapper.unwrap())?;
-
-    write_network_config(&config_yaml, network.provider)?;
-
+    write_network_config(&config_str, network.provider)?;
     apply_network_config(network.provider)?;
     Ok(())
 }
@@ -229,6 +289,86 @@ mod tests {
             !content.contains("addresses: null"),
             "Found 'null' for addresses – optional fields should be skipped\n---\n{}\n---",
             content
+        );
+    }
+
+    #[test]
+    fn test_ifupdown_generates_valid_config() {
+        let network = Network {
+            provider: NetworkConfigType::Ifupdown,
+            interfaces: vec![
+                Ethernet {
+                    name: "eth0".to_string(),
+                    mac: "52:54:00:12:34:56".to_string(),
+                    dhcp4: true,
+                    addresses: None,
+                    gateway4: None,
+                    gateway6: None,
+                    routes: None,
+                    nameservers: None,
+                },
+                Ethernet {
+                    name: "ens3".to_string(),
+                    mac: "00:16:3e:aa:bb:cc".to_string(),
+                    dhcp4: false,
+                    addresses: Some(vec!["10.0.0.10/24".to_string()]),
+                    gateway4: Some("10.0.0.1".to_string()),
+                    gateway6: None,
+                    routes: Some(vec![Route {
+                        to: "192.168.1.0/24".to_string(),
+                        via: "10.0.0.1".to_string(),
+                        metric: Some(100),
+                    }]),
+                    nameservers: Some(NameServers {
+                        search: vec!["example.com".to_string()],
+                        addresses: vec!["8.8.8.8".to_string(), "1.1.1.1".to_string()],
+                    }),
+                },
+            ],
+        };
+
+        let config_text = ifupdown_to_text(&network).unwrap();
+
+        let temp_dir = TempDir::new().unwrap();
+        let test_output_path = temp_dir.path().join("test-ifupdown-output");
+        let test_output_path_str = test_output_path
+            .to_str()
+            .expect("Failed to convert temp path to string");
+
+        write_network_config_with_path(&config_text, test_output_path_str)
+            .expect("Failed to write test output file");
+
+        let content = fs::read_to_string(test_output_path).expect("Failed to read generated file");
+
+        assert!(
+            content.trim_start().starts_with("auto lo"),
+            "Missing loopback\n---\n{}\n---",
+            content
+        );
+        assert!(
+            content.contains("iface lo inet loopback"),
+            "Missing loopback iface"
+        );
+        assert!(content.contains("auto eth0"), "Missing eth0");
+        assert!(
+            content.contains("iface eth0 inet dhcp"),
+            "Missing eth0 dhcp"
+        );
+        assert!(content.contains("auto ens3"), "Missing ens3");
+        assert!(
+            content.contains("iface ens3 inet static"),
+            "Missing ens3 static"
+        );
+        assert!(content.contains("address 10.0.0.10/24"), "Missing address");
+        assert!(content.contains("gateway 10.0.0.1"), "Missing gateway");
+        assert!(
+            content.contains("dns-nameservers 8.8.8.8 1.1.1.1"),
+            "Missing dns"
+        );
+        assert!(content.contains("dns-search example.com"), "Missing search");
+        assert!(
+            content.contains("post-up ip route add 192.168.1.0/24 via 10.0.0.1 metric 100"),
+            "Missing route"
         );
     }
 }

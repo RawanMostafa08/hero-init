@@ -9,7 +9,7 @@ const SECTOR_SIZE: u64 = 512;
 
 // Search for a block device with the given label in /dev/disk/by-label
 pub fn find_seed_device(label: &str) -> Option<PathBuf> {
-    find_seed_device_with_path(label, paths::BY_LABEL_PATH)
+    find_seed_device_with_path(label, paths::SEED_DEVICE_PATH)
 }
 
 fn find_seed_device_with_path(label: &str, by_label_path: &str) -> Option<PathBuf> {
