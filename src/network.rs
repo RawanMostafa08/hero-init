@@ -7,7 +7,6 @@ use std::fs;
 use std::io;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
-use std::process::Command;
 
 // Temporary structs only for serializing correct Netplan format
 #[derive(Serialize)]
@@ -73,21 +72,6 @@ pub fn write_network_config(config_yaml: &str, provider: NetworkConfigType) -> i
     };
 
     write_network_config_with_path(config_yaml, path)
-}
-
-// Apply the network configuration using the appropriate command
-pub fn apply_network_config(provider: NetworkConfigType) -> io::Result<()> {
-    let status = match provider {
-        NetworkConfigType::Netplan => Command::new("netplan").arg("apply").status()?,
-
-        NetworkConfigType::Ifupdown => Command::new("ifup").args(["-a"]).status()?,
-    };
-
-    if status.success() {
-        Ok(())
-    } else {
-        Err(io::Error::other("failed to apply network configuration."))
-    }
 }
 
 fn wrap_network(interfaces: &Vec<Ethernet>) -> Result<NetplanWrapper> {
@@ -196,7 +180,6 @@ pub fn apply(network: &Network) -> Result<()> {
     };
 
     write_network_config(&config_str, network.provider)?;
-    apply_network_config(network.provider)?;
     Ok(())
 }
 

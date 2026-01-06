@@ -106,6 +106,20 @@ network:
           - hero.local
 ```
 
+**Important**: Network configuration files are written but not applied automatically. You must add the appropriate network commands to the `runcmd` section to apply the network configuration:
+
+For netplan provider:
+```yaml
+runcmd:
+  - "netplan apply"
+```
+
+For ifupdown provider:
+```yaml
+runcmd:
+  - "systemctl restart networking"
+```
+
 ### User Configuration
 
 The users section defines user accounts to create:
@@ -166,12 +180,11 @@ The network module configures network interfaces:
 - Supports both netplan and ifupdown providers
 - Configures static IPs, DHCP, routes, and DNS settings
 - Generates appropriate configuration files based on provider
-- Applies network configuration using system commands
+- Writes network configuration files (manual application required via runcmd)
 
 Key functions:
 - `apply(network: &Network) -> Result<()>` - Main network configuration function
 - `write_network_config(config_yaml: &str, provider: NetworkConfigType) -> io::Result<()>` - Writes network config file
-- `apply_network_config(provider: NetworkConfigType) -> io::Result<()>` - Applies network configuration
 
 ### Users Module
 

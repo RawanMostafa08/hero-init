@@ -25,6 +25,7 @@ users:
       - sudo
     sudo: true
 runcmd:
+  - "netplan apply"
   - "echo 'Hello from hero-init' >> /tmp/test1.txt"
   - cmd: "echo $MY_VAR > /tmp/test2.txt"
     env:
