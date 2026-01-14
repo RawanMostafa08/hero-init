@@ -6,7 +6,9 @@ use crate::network::NetworkConfigType;
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
     pub metadata: Metadata,
-    pub network: Network,
+    #[serde(default)]
+    pub network: Option<Network>,
+    #[serde(default)]
     pub users: Vec<User>,
     #[serde(default)]
     pub runcmd: Vec<RunCommand>,
@@ -40,9 +42,11 @@ pub struct Metadata {
 #[derive(Debug, Deserialize)]
 pub struct User {
     pub name: String,
+    #[serde(default)]
     pub ssh_authorized_keys: Vec<String>,
     #[serde(default)]
     pub groups: Vec<String>,
+    #[serde(default)]
     pub sudo: bool,
 }
 
@@ -65,9 +69,14 @@ pub struct Ethernet {
     pub name: String,
     pub mac: String,
     pub dhcp4: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub addresses: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub gateway4: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub gateway6: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub routes: Option<Vec<Route>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub nameservers: Option<NameServers>,
 }

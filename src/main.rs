@@ -91,7 +91,9 @@ fn main() -> Result<()> {
     }
 
     if !state::is_module_complete(&state, "network") {
-        network::apply(&cfg.network)?;
+        if let Some(network_config) = &cfg.network {
+            network::apply(network_config)?;
+        }
         state::mark_module_complete(&mut state, "network");
         state::save_state(&state)?;
     }
