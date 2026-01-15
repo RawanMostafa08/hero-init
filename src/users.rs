@@ -124,11 +124,13 @@ pub fn apply(users: &[User]) -> Result<()> {
         let auth_keys = ssh_dir.join("authorized_keys");
 
         // Set .ssh directory: owned by user, mode 700
-        set_permissions(&ssh_dir, 0o700, uid, gid)?;
+        if !user.ssh_authorized_keys.is_empty() {
+            set_permissions(&ssh_dir, 0o700, uid, gid)?;
 
-        // Set authorized_keys: owned by user, mode 600
-        if auth_keys.exists() {
-            set_permissions(&auth_keys, 0o600, uid, gid)?;
+            // Set authorized_keys: owned by user, mode 600
+            if auth_keys.exists() {
+                set_permissions(&auth_keys, 0o600, uid, gid)?;
+            }
         }
 
         set_permissions(&home_dir, 0o755, uid, gid)?;
