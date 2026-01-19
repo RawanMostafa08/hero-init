@@ -1,7 +1,7 @@
+use anyhow::Result;
 use std::collections::HashMap;
 use std::fs::{self, OpenOptions};
-use std::io::Result;
-use std::io::{self, Write};
+use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::Command;
@@ -20,7 +20,7 @@ pub fn run_cmd(command: &str, env_vars: HashMap<String, String>) -> Result<()> {
     let status = cmd.status()?;
 
     if !status.success() {
-        Err(io::Error::other("failed to execute command"))
+        Err(anyhow::anyhow!("failed to execute command"))
     } else {
         Ok(())
     }

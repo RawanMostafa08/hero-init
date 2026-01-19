@@ -40,7 +40,6 @@ The tool is designed to be idempotent, meaning it can be run multiple times with
 - Hostname and hosts file configuration
 - Custom command execution with environment variables
 - Idempotent operation with state tracking
-- Support for multiple network providers (netplan, ifupdown)
 - Comprehensive logging
 
 ## How It Works
@@ -88,7 +87,6 @@ The network section configures network interfaces:
 
 ```yaml
 network:
-  provider: netplan  # or ifupdown
   interfaces:
     - name: ens3
       mac: "52:54:00:12:34:56"
@@ -104,20 +102,6 @@ network:
           - 8.8.8.8
         search:
           - hero.local
-```
-
-**Important**: Network configuration files are written but not applied automatically. You must add the appropriate network commands to the `runcmd` section to apply the network configuration:
-
-For netplan provider:
-```yaml
-runcmd:
-  - "netplan apply"
-```
-
-For ifupdown provider:
-```yaml
-runcmd:
-  - "systemctl restart networking"
 ```
 
 ### User Configuration
@@ -177,14 +161,11 @@ Key functions:
 
 The network module configures network interfaces:
 
-- Supports both netplan and ifupdown providers
 - Configures static IPs, DHCP, routes, and DNS settings
-- Generates appropriate configuration files based on provider
-- Writes network configuration files (manual application required via runcmd)
+- Directly applies network configuration using ip commands
 
 Key functions:
 - `apply(network: &Network) -> Result<()>` - Main network configuration function
-- `write_network_config(config_yaml: &str, provider: NetworkConfigType) -> io::Result<()>` - Writes network config file
 
 ### Users Module
 
@@ -297,7 +278,6 @@ See [example.yaml](example.yaml) for a complete configuration example:
 instance_id: "hero-001"
 hostname: "hero-vm"
 network:
-  provider: netplan
   interfaces:
     - name: ens3
       mac: "52:54:00:12:34:56"

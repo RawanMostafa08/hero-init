@@ -1,10 +1,10 @@
 use crate::config::Metadata;
 use crate::paths;
+use anyhow::Result;
 use libc::{SYS_sethostname, syscall};
 use std::ffi::CString;
 use std::fs;
 use std::io::Error;
-use std::io::Result;
 use std::io::Write;
 
 // Set system hostname
@@ -17,7 +17,8 @@ pub fn set_hostname(hostname: &str) -> Result<()> {
 }
 
 fn write_hostname_file(hostname: &str, path: &str) -> Result<()> {
-    fs::write(path, hostname.as_bytes())
+    fs::write(path, hostname.as_bytes())?;
+    Ok(())
 }
 
 fn set_hostname_syscall(hostname: &str) -> Result<()> {
@@ -27,7 +28,7 @@ fn set_hostname_syscall(hostname: &str) -> Result<()> {
     if res == 0 {
         Ok(())
     } else {
-        Err(Error::last_os_error())
+        Err(anyhow::anyhow!(Error::last_os_error()))
     }
 }
 

@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-use crate::network::NetworkConfigType;
-
 #[derive(Debug, Deserialize)]
 pub struct Configuration {
     pub metadata: Metadata,
@@ -30,7 +28,6 @@ pub enum RunCommand {
 #[derive(Debug, Deserialize)]
 pub struct Network {
     pub interfaces: Vec<Ethernet>,
-    pub provider: NetworkConfigType,
 }
 
 #[derive(Debug, Deserialize)]

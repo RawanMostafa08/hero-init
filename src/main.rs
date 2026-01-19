@@ -85,28 +85,60 @@ fn main() -> Result<()> {
     log::info!("First boot detected, applying configuration");
 
     if !state::is_module_complete(&state, "metadata") {
-        metadata::apply(&cfg.metadata)?;
+        match metadata::apply(&cfg.metadata) {
+            Ok(()) => {
+                log::info!("Metadata configuration applied successfully");
+            }
+            Err(e) => {
+                log::error!("Metadata configuration failed: {}", e);
+                return Err(e);
+            }
+        }
         state::mark_module_complete(&mut state, "metadata");
         state::save_state(&state)?;
     }
 
     if !state::is_module_complete(&state, "network") {
         if let Some(network_config) = &cfg.network {
-            network::apply(network_config)?;
+            match network::apply(network_config) {
+                Ok(()) => {
+                    log::info!("Network configuration applied successfully");
+                }
+                Err(e) => {
+                    log::error!("Network configuration failed: {}", e);
+                    return Err(e);
+                }
+            }
         }
         state::mark_module_complete(&mut state, "network");
         state::save_state(&state)?;
     }
 
     if !state::is_module_complete(&state, "users") {
-        users::apply(&cfg.users)?;
+        match users::apply(&cfg.users) {
+            Ok(()) => {
+                log::info!("Users configuration applied successfully");
+            }
+            Err(e) => {
+                log::error!("Users configuration failed: {}", e);
+                return Err(e);
+            }
+        }
         state::mark_module_complete(&mut state, "users");
         state::save_state(&state)?;
     }
 
     if !state::is_module_complete(&state, "runcmd") && !cfg.runcmd.is_empty() {
         log::info!("Running user commands ({} commands)", cfg.runcmd.len());
-        execution::apply(&cfg.runcmd)?;
+        match execution::apply(&cfg.runcmd) {
+            Ok(()) => {
+                log::info!("User commands executed successfully");
+            }
+            Err(e) => {
+                log::error!("User commands execution failed: {}", e);
+                return Err(e);
+            }
+        }
         state::mark_module_complete(&mut state, "runcmd");
         state::save_state(&state)?;
     }

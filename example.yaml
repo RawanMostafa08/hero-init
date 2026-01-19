@@ -1,7 +1,6 @@
 instance_id: "hero-001"
 hostname: "hero-vm"
 network:
-  provider: netplan
   interfaces:
     - name: ens3
       mac: "52:54:00:12:34:56"
@@ -25,7 +24,6 @@ users:
       - sudo
     sudo: true
 runcmd:
-  - "netplan apply"
   - "echo 'Hello from hero-init' >> /tmp/test1.txt"
   - cmd: "echo $MY_VAR > /tmp/test2.txt"
     env:
