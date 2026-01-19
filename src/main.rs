@@ -76,9 +76,47 @@ fn main() -> Result<()> {
     let mut state = state::load_state()?;
 
     // Apply configurations
+    // Note: network configuration needs to be applied on every boot
+    if let Some(network_config) = &cfg.network {
+        match network::apply(network_config) {
+            Ok(()) => {
+                log::info!("Network configuration applied successfully");
+                // Still track state even though we run every boot
+                if !state::is_module_complete(&state, "network") {
+                    state::mark_module_complete(&mut state, "network");
+                }
+            }
+            Err(e) => {
+                log::error!("Network configuration failed: {}", e);
+                return Err(e);
+            }
+        }
+    }
+
+    // Note: runcmd needs to be applied on every boot
+    if !cfg.runcmd.is_empty() {
+        log::info!("Running user commands ({} commands)", cfg.runcmd.len());
+        match execution::apply(&cfg.runcmd) {
+            Ok(()) => {
+                log::info!("User commands executed successfully");
+                // Still track state even though we run every boot
+                if !state::is_module_complete(&state, "runcmd") {
+                    state::mark_module_complete(&mut state, "runcmd");
+                }
+            }
+            Err(e) => {
+                log::error!("User commands execution failed: {}", e);
+                return Err(e);
+            }
+        }
+    }
+
+    // Save state if we made changes
+    state::save_state(&state)?;
+
     let is_first = is_first_boot(&cfg)?;
     if !is_first {
-        log::info!("Subsequent boot, skipping per-instance configuration");
+        log::info!("Subsequent boot, skipping metadata and users configuration");
         return Ok(());
     }
 
@@ -98,22 +136,6 @@ fn main() -> Result<()> {
         state::save_state(&state)?;
     }
 
-    if !state::is_module_complete(&state, "network") {
-        if let Some(network_config) = &cfg.network {
-            match network::apply(network_config) {
-                Ok(()) => {
-                    log::info!("Network configuration applied successfully");
-                }
-                Err(e) => {
-                    log::error!("Network configuration failed: {}", e);
-                    return Err(e);
-                }
-            }
-        }
-        state::mark_module_complete(&mut state, "network");
-        state::save_state(&state)?;
-    }
-
     if !state::is_module_complete(&state, "users") {
         match users::apply(&cfg.users) {
             Ok(()) => {
@@ -125,21 +147,6 @@ fn main() -> Result<()> {
             }
         }
         state::mark_module_complete(&mut state, "users");
-        state::save_state(&state)?;
-    }
-
-    if !state::is_module_complete(&state, "runcmd") && !cfg.runcmd.is_empty() {
-        log::info!("Running user commands ({} commands)", cfg.runcmd.len());
-        match execution::apply(&cfg.runcmd) {
-            Ok(()) => {
-                log::info!("User commands executed successfully");
-            }
-            Err(e) => {
-                log::error!("User commands execution failed: {}", e);
-                return Err(e);
-            }
-        }
-        state::mark_module_complete(&mut state, "runcmd");
         state::save_state(&state)?;
     }
 

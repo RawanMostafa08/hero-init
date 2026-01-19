@@ -79,6 +79,9 @@ fn add_address(iface_name: &str, address: &str) -> Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("File exists") {
+            return Ok(());
+        }
         error!(
             "Failed to add address {} to {}: {}",
             address, iface_name, stderr
@@ -106,6 +109,9 @@ fn add_route(route: &str, via: &str, metric: Option<u32>) -> Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("File exists") {
+            return Ok(());
+        }
         error!("Failed to add route {} via {}: {}", route, via, stderr);
         return Err(anyhow!(
             "Failed to add route {} via {}: {}",
@@ -125,6 +131,9 @@ fn add_default_gateway(gateway: &str) -> Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("File exists") {
+            return Ok(());
+        }
         error!("Failed to add default gateway {}: {}", gateway, stderr);
         return Err(anyhow!(
             "Failed to add default gateway {}: {}",
@@ -143,6 +152,9 @@ fn add_default_gateway_ipv6(gateway: &str) -> Result<()> {
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("File exists") {
+            return Ok(());
+        }
         error!("Failed to add default IPv6 gateway {}: {}", gateway, stderr);
         return Err(anyhow!(
             "Failed to add default IPv6 gateway {}: {}",
