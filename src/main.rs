@@ -5,7 +5,7 @@ use config::Configuration;
 use std::fs;
 use std::path::Path;
 
-use simplelog::*;
+use flexi_logger::{Cleanup, Criterion, FileSpec, Logger, Naming};
 
 const DEVICE_LABEL: &str = "SEED";
 
@@ -22,37 +22,28 @@ fn is_first_boot(cfg: &Configuration) -> Result<bool> {
 }
 
 fn init_logger() -> Result<()> {
-    let log_file = {
-        // Try /var/log first
-        if let Err(e) = std::fs::create_dir_all(paths::HERO_LOG_DIR_PATH) {
-            eprintln!("Could not create {}: {}", paths::HERO_LOG_DIR_PATH, e);
-        }
+    // Try /var/log first
+    if let Err(e) = std::fs::create_dir_all(paths::HERO_LOG_DIR_PATH) {
+        eprintln!("Could not create {}: {}", paths::HERO_LOG_DIR_PATH, e);
+    }
 
-        match std::fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(paths::HERO_LOG_PATH)
-        {
-            Ok(file) => file,
-            Err(e) => {
-                eprintln!(
-                    "Failed to open {}: {}, falling back to {}",
-                    paths::HERO_LOG_PATH,
-                    e,
-                    paths::HERO_LOG_FALLBACK_PATH
-                );
-                std::fs::OpenOptions::new()
-                    .create(true)
-                    .append(true)
-                    .open(paths::HERO_LOG_FALLBACK_PATH)?
-            }
-        }
-    };
-
-    WriteLogger::init(LevelFilter::Info, Config::default(), log_file).map_err(|e| {
-        eprintln!("Failed to init logger: {}", e);
-        anyhow::anyhow!("Logger init failed")
-    })?;
+    Logger::try_with_str("info")?
+        .log_to_file(
+            FileSpec::default()
+                .directory(paths::HERO_LOG_DIR_PATH)
+                .basename("hero-init")
+                .suppress_timestamp(),
+        )
+        .rotate(
+            Criterion::Size(10_000_000), // Rotate at 10MB
+            Naming::Timestamps,
+            Cleanup::KeepLogFiles(5), // Keep last 5 log files
+        )
+        .start()
+        .map_err(|e| {
+            eprintln!("Failed to init logger: {}", e);
+            anyhow::anyhow!("Logger init failed")
+        })?;
 
     Ok(())
 }

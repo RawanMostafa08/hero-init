@@ -1,5 +1,5 @@
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::io::Result;
 use std::path::{self, Path};
 use std::{collections::HashSet, fs, io};
 
@@ -27,7 +27,7 @@ fn load_state_with_path(path: &str) -> Result<HeroState> {
         // file doesn't exist, no saved state yet, return default state
         Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(HeroState::default()),
 
-        Err(e) => Err(e),
+        Err(e) => Err(anyhow::anyhow!(e)),
     }
 }
 
@@ -44,7 +44,8 @@ fn save_state_with_path(state: &HeroState, path: &path::Path) -> Result<()> {
 
     let data = serde_yaml::to_string(state).map_err(io::Error::other)?;
 
-    execution::write_file_atomic(path, &data, 0o600) // owner only
+    execution::write_file_atomic(path, &data, 0o600)?; // owner only
+    Ok(())
 }
 
 // Returns true if the passed module already ran, false otherwise
