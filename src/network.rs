@@ -1,6 +1,7 @@
 use crate::config::*;
 use crate::paths;
 use anyhow::Result;
+use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -53,11 +54,18 @@ pub enum NetworkConfigType {
 }
 
 fn write_network_config_with_path(config_yaml: &str, path: &str) -> io::Result<()> {
+    info!("Writing network configuration to: {}", path);
     if let Some(parent) = Path::new(path).parent() {
         fs::create_dir_all(parent)?;
     }
 
-    fs::write(path, config_yaml)?;
+    match fs::write(path, config_yaml) {
+        Ok(_) => info!("Successfully wrote network configuration file"),
+        Err(e) => {
+            error!("Failed to write network configuration to {}: {}", path, e);
+            return Err(e);
+        }
+    }
 
     fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
 
@@ -67,14 +75,28 @@ fn write_network_config_with_path(config_yaml: &str, path: &str) -> io::Result<(
 // Write the network configuration to the appropriate file based on provider
 pub fn write_network_config(config_yaml: &str, provider: NetworkConfigType) -> io::Result<()> {
     let path = match provider {
-        NetworkConfigType::Netplan => paths::NET_PLAN_CONFIG_PATH,
-        NetworkConfigType::Ifupdown => paths::IF_UP_DOWN_CONFIG_PATH,
+        NetworkConfigType::Netplan => {
+            info!("Using Netplan provider for network configuration");
+            paths::NET_PLAN_CONFIG_PATH
+        }
+        NetworkConfigType::Ifupdown => {
+            info!("Using Ifupdown provider for network configuration");
+            paths::IF_UP_DOWN_CONFIG_PATH
+        }
     };
 
+    info!(
+        "Network configuration provider: {:?}, output path: {}",
+        provider, path
+    );
     write_network_config_with_path(config_yaml, path)
 }
 
 fn wrap_network(interfaces: &Vec<Ethernet>) -> Result<NetplanWrapper> {
+    info!(
+        "Creating Netplan configuration for {} interfaces",
+        interfaces.len()
+    );
     let mut ethernets = HashMap::new();
 
     for iface in interfaces {
@@ -101,6 +123,7 @@ fn wrap_network(interfaces: &Vec<Ethernet>) -> Result<NetplanWrapper> {
         },
     };
 
+    info!("Successfully created Netplan configuration wrapper");
     Ok(wrapper)
 }
 
@@ -164,8 +187,10 @@ fn ifupdown_to_text(network: &Network) -> Result<String> {
         }
 
         config.push('\n');
+        debug!("Completed configuration for interface {}", iface.name);
     }
 
+    info!("Successfully created Ifupdown configuration");
     Ok(config)
 }
 
