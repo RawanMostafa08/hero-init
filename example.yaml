@@ -1,0 +1,30 @@
+instance_id: "hero-001"
+hostname: "hero-vm"
+network:
+  interfaces:
+    - name: ens3
+      mac: "52:54:00:12:34:56"
+      dhcp4: false
+      addresses:
+        - 10.0.2.100/24
+      routes:
+        - to: default
+          via: 10.0.2.2
+      nameservers:
+        addresses:
+          - 10.0.2.3
+          - 8.8.8.8
+        search:
+          - hero.local
+users:
+  - name: john
+    ssh_authorized_keys:
+      - "ssh-ed25519 AAAAC.... john@hero-test"
+    groups:
+      - sudo
+    sudo: true
+runcmd:
+  - "echo 'Hello from hero-init' >> /tmp/test1.txt"
+  - cmd: "echo $MY_VAR > /tmp/test2.txt"
+    env:
+      MY_VAR: "190"

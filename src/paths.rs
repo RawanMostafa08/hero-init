@@ -1,0 +1,13 @@
+pub const SEED_DEVICE_PATH: &str = "/dev/disk/by-label";
+pub const DEVICE_CAPACITY_PATH: &str = "/sys/class/block";
+pub const MOUNT_PATH: &str = "/run/hero-init/seed";
+pub const INSTANCE_ID_PATH: &str = "/var/lib/hero-init/instance-id";
+pub const HOSTNAME_PATH: &str = "/etc/hostname";
+pub const HOSTS_FILE_PATH: &str = "/etc/hosts";
+pub const HERO_STATE_PATH: &str = "/var/lib/hero-init/state";
+pub const PASSWD_FILE_PATH: &str = "/etc/passwd";
+pub const SUDOERS_PATH: &str = "/etc/sudoers.d";
+pub const BASH_PATH: &str = "/bin/bash";
+pub const HERO_LOG_PATH: &str = "/var/log/hero-init.log";
+pub const HERO_LOG_FALLBACK_PATH: &str = "/tmp/hero-init.log";
+pub const HERO_LOG_DIR_PATH: &str = "/var/log";
